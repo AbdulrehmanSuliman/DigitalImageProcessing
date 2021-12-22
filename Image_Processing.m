@@ -824,7 +824,7 @@ classdef Image_Processing < matlab.apps.AppBase
                     
             end
 
-             app.UIAxes5_6.Position=[100,20,256,256];
+             app.UIAxes5_6.Position=[100,-15,256,256];
              imshow(app.noisyImage,'Parent',app.UIAxes5_6);
              app.ChooseROIButton.Visible='on';
         end
@@ -832,43 +832,51 @@ classdef Image_Processing < matlab.apps.AppBase
         % Button pushed function: ChooseROIButton
         function ChooseROIButtonPushed(app, event)
             % get the region of interest by drawing a rectangle
-            roi = drawrectangle(app.UIAxes5_6,'Color',[1 0 0]);
-             p=uint8(roi.Position);
-             app.roiImage=uint8(app.noisyImage(p(2):p(2)+p(4),p(1):p(1)+p(3)));
-             app.UIAxes5_5.Position=[100,20,size(app.roiImage,2),size(app.roiImage,1)];
-             imshow(app.roiImage,'Parent',app.UIAxes5_5);
-             disp(app.roiImage);
-             %get the histogram of the ROI
-             histImage=zeros(1,256);
-             [Row,Col]=size(app.roiImage); 
-             for i=1:Row
-                 for j=1:Col
-                     intensity=app.roiImage(i,j);
-                     histImage(intensity+1)=histImage(intensity+1)+1;
+%             try
+                
+                roi = drawrectangle(app.UIAxes5_6,'interactionsAllowed','none','Color',[1 0 0]);
+                 p=uint8(roi.Position);
+                 app.roiImage=uint8(app.noisyImage(p(2):p(2)+p(4),p(1):p(1)+p(3)));
+                 imshow(app.roiImage,'Parent',app.UIAxes5_5);
+                 
+                 %get the histogram of the ROI
+                 histImage=zeros(1,256);
+                 [Row,Col]=size(app.roiImage); 
+                 for i=1:Row
+                     for j=1:Col
+                         intensity=app.roiImage(i,j);
+                         histImage(intensity+1)=histImage(intensity+1)+1;
+                     end
                  end
-             end
-            %get the mean and standerd deviation
-            %Mean= (Sum of values)/count
-            %variance= E(x^2)-(E(x))^2
-            %segma = sqrt(variance)
-            sumX=0;
-            sumX2=0;
-            count=0;
-            for i=1:256
-                count=count+histImage(i);
-                sumX=sumX+i*histImage(i);
-                sumX2=sumX2+i^2*histImage(i);
-            end
-            mean=sumX/count;
-            segma=sqrt((sumX2/count)-(sumX/count)^2);
-            app.MeanEditField.Value=num2str(mean);
-            app.segmaEditField.Value=num2str(segma);
-            app.MeanEditField.Visible='on';
-            app.segmaEditField.Visible='on';
-            app.MeanEditFieldLabel.Visible='on';
-            app.segmaEditFieldLabel.Visible='on';
-            app.UIAxes6_3.Visible='on';
-            bar(histImage,'Parent',app.UIAxes6_3);
+                %get the mean and standerd deviation
+                %Mean= (Sum of values)/count
+                %variance= E(x^2)-(E(x))^2
+                %segma = sqrt(variance)
+                sumX=0;
+                sumX2=0;
+                count=0;
+                for i=1:256
+                    count=count+histImage(i);
+                    sumX=sumX+i*histImage(i);
+                    sumX2=sumX2+i^2*histImage(i);
+                end
+                mean=sumX/count;
+                segma=sqrt((sumX2/count)-(sumX/count)^2);
+                app.MeanEditField.Value=num2str(mean);
+                app.segmaEditField.Value=num2str(segma);
+                app.MeanEditField.Visible='on';
+                app.segmaEditField.Visible='on';
+                app.MeanEditFieldLabel.Visible='on';
+                app.segmaEditFieldLabel.Visible='on';
+                app.UIAxes6_3.Visible='on';
+                bar(histImage,'Parent',app.UIAxes6_3);
+                xline(mean,'Parent',app.UIAxes6_3,'Color','r');
+                delete(roi);
+%             catch
+%                  uialert(app.UIFigure ,'Please draw the rectangle inside the image.','Invalid input');
+%                  delete(roi);
+%             end
+%                 
         end
     end
 
@@ -880,6 +888,7 @@ classdef Image_Processing < matlab.apps.AppBase
 
             % Create UIFigure and hide until all components are created
             app.UIFigure = uifigure('Visible', 'off');
+            app.UIFigure.Color = [0 0 0];
             app.UIFigure.Colormap = [0.2431 0.149 0.6588;0.251 0.1647 0.7059;0.2588 0.1804 0.7529;0.2627 0.1961 0.7961;0.2706 0.2157 0.8353;0.2745 0.2353 0.8706;0.2784 0.2549 0.898;0.2784 0.2784 0.9216;0.2824 0.302 0.9412;0.2824 0.3216 0.9569;0.2784 0.3451 0.9725;0.2745 0.3686 0.9843;0.2706 0.3882 0.9922;0.2588 0.4118 0.9961;0.2431 0.4353 1;0.2196 0.4588 0.9961;0.1961 0.4863 0.9882;0.1843 0.5059 0.9804;0.1804 0.5294 0.9686;0.1765 0.549 0.9529;0.1686 0.5686 0.9373;0.1529 0.5922 0.9216;0.1451 0.6078 0.9098;0.1373 0.6275 0.898;0.1255 0.6471 0.8902;0.1098 0.6627 0.8745;0.0941 0.6784 0.8588;0.0706 0.6941 0.8392;0.0314 0.7098 0.8157;0.0039 0.7216 0.7922;0.0078 0.7294 0.7647;0.0431 0.7412 0.7412;0.098 0.749 0.7137;0.1412 0.7569 0.6824;0.1725 0.7686 0.6549;0.1922 0.7765 0.6235;0.2157 0.7843 0.5922;0.2471 0.7922 0.5569;0.2902 0.7961 0.5176;0.3412 0.8 0.4784;0.3922 0.8039 0.4353;0.4471 0.8039 0.3922;0.5059 0.8 0.349;0.5608 0.7961 0.3059;0.6157 0.7882 0.2627;0.6706 0.7804 0.2235;0.7255 0.7686 0.1922;0.7725 0.7608 0.1647;0.8196 0.749 0.1529;0.8627 0.7412 0.1608;0.902 0.7333 0.1765;0.9412 0.7294 0.2118;0.9725 0.7294 0.2392;0.9961 0.7451 0.2353;0.9961 0.7647 0.2196;0.9961 0.7882 0.2039;0.9882 0.8118 0.1882;0.9804 0.8392 0.1765;0.9686 0.8627 0.1647;0.9608 0.8902 0.1529;0.9608 0.9137 0.1412;0.9647 0.9373 0.1255;0.9686 0.9608 0.1059;0.9765 0.9843 0.0824];
             app.UIFigure.Position = [100 100 1216 533];
             app.UIFigure.Name = 'UI Figure';
@@ -904,7 +913,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.Panel_3 = uipanel(app.ImageviewerTab);
             app.Panel_3.BorderType = 'none';
             app.Panel_3.BackgroundColor = [0 0.451 0.7412];
-            app.Panel_3.Position = [0 -250 343 760];
+            app.Panel_3.Position = [0 0 343 510];
 
             % Create WidthEditFieldLabel
             app.WidthEditFieldLabel = uilabel(app.Panel_3);
@@ -912,7 +921,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.WidthEditFieldLabel.VerticalAlignment = 'top';
             app.WidthEditFieldLabel.FontWeight = 'bold';
             app.WidthEditFieldLabel.FontColor = [1 1 1];
-            app.WidthEditFieldLabel.Position = [17 732 37 15];
+            app.WidthEditFieldLabel.Position = [17 482 37 15];
             app.WidthEditFieldLabel.Text = 'Width';
 
             % Create WidthEditField
@@ -921,7 +930,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.WidthEditField.HorizontalAlignment = 'left';
             app.WidthEditField.FontColor = [1 1 1];
             app.WidthEditField.BackgroundColor = [0 0.451 0.7412];
-            app.WidthEditField.Position = [68 728 100 22];
+            app.WidthEditField.Position = [68 478 100 22];
 
             % Create HeightEditFieldLabel
             app.HeightEditFieldLabel = uilabel(app.Panel_3);
@@ -929,7 +938,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.HeightEditFieldLabel.VerticalAlignment = 'top';
             app.HeightEditFieldLabel.FontWeight = 'bold';
             app.HeightEditFieldLabel.FontColor = [1 1 1];
-            app.HeightEditFieldLabel.Position = [183 732 42 15];
+            app.HeightEditFieldLabel.Position = [183 482 42 15];
             app.HeightEditFieldLabel.Text = 'Height';
 
             % Create HeightEditField
@@ -938,7 +947,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.HeightEditField.HorizontalAlignment = 'left';
             app.HeightEditField.FontColor = [1 1 1];
             app.HeightEditField.BackgroundColor = [0 0.451 0.7412];
-            app.HeightEditField.Position = [234 728 100 22];
+            app.HeightEditField.Position = [234 478 100 22];
 
             % Create BitdepthEditFieldLabel
             app.BitdepthEditFieldLabel = uilabel(app.Panel_3);
@@ -946,7 +955,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.BitdepthEditFieldLabel.VerticalAlignment = 'top';
             app.BitdepthEditFieldLabel.FontWeight = 'bold';
             app.BitdepthEditFieldLabel.FontColor = [1 1 1];
-            app.BitdepthEditFieldLabel.Position = [17 698 56 15];
+            app.BitdepthEditFieldLabel.Position = [17 448 56 15];
             app.BitdepthEditFieldLabel.Text = 'Bit depth';
 
             % Create BitdepthEditField
@@ -955,7 +964,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.BitdepthEditField.HorizontalAlignment = 'left';
             app.BitdepthEditField.FontColor = [1 1 1];
             app.BitdepthEditField.BackgroundColor = [0 0.451 0.7412];
-            app.BitdepthEditField.Position = [68 694 100 22];
+            app.BitdepthEditField.Position = [68 444 100 22];
 
             % Create ImagecolorEditFieldLabel
             app.ImagecolorEditFieldLabel = uilabel(app.Panel_3);
@@ -963,7 +972,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.ImagecolorEditFieldLabel.VerticalAlignment = 'top';
             app.ImagecolorEditFieldLabel.FontWeight = 'bold';
             app.ImagecolorEditFieldLabel.FontColor = [1 1 1];
-            app.ImagecolorEditFieldLabel.Position = [180 696 72 15];
+            app.ImagecolorEditFieldLabel.Position = [180 446 72 15];
             app.ImagecolorEditFieldLabel.Text = 'Image color';
 
             % Create ImagecColorEditField
@@ -971,7 +980,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.ImagecColorEditField.Editable = 'off';
             app.ImagecColorEditField.FontColor = [1 1 1];
             app.ImagecColorEditField.BackgroundColor = [0 0.451 0.7412];
-            app.ImagecColorEditField.Position = [264 691 73 22];
+            app.ImagecColorEditField.Position = [264 441 73 22];
 
             % Create TotalsizeEditField_2Label
             app.TotalsizeEditField_2Label = uilabel(app.Panel_3);
@@ -980,7 +989,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.TotalsizeEditField_2Label.VerticalAlignment = 'top';
             app.TotalsizeEditField_2Label.FontWeight = 'bold';
             app.TotalsizeEditField_2Label.FontColor = [1 1 1];
-            app.TotalsizeEditField_2Label.Position = [11 660 59 15];
+            app.TotalsizeEditField_2Label.Position = [11 410 59 15];
             app.TotalsizeEditField_2Label.Text = 'Total size';
 
             % Create TotalsizeEditField
@@ -988,7 +997,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.TotalsizeEditField.Editable = 'off';
             app.TotalsizeEditField.FontColor = [1 1 1];
             app.TotalsizeEditField.BackgroundColor = [0 0.451 0.7412];
-            app.TotalsizeEditField.Position = [85 655 83 22];
+            app.TotalsizeEditField.Position = [85 405 83 22];
 
             % Create ModalityEditFieldLabel
             app.ModalityEditFieldLabel = uilabel(app.Panel_3);
@@ -996,7 +1005,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.ModalityEditFieldLabel.VerticalAlignment = 'top';
             app.ModalityEditFieldLabel.FontWeight = 'bold';
             app.ModalityEditFieldLabel.FontColor = [1 1 1];
-            app.ModalityEditFieldLabel.Position = [186 659 53 15];
+            app.ModalityEditFieldLabel.Position = [186 409 53 15];
             app.ModalityEditFieldLabel.Text = 'Modality';
 
             % Create ModalityEditField
@@ -1004,7 +1013,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.ModalityEditField.Editable = 'off';
             app.ModalityEditField.FontColor = [1 1 1];
             app.ModalityEditField.BackgroundColor = [0 0.451 0.7412];
-            app.ModalityEditField.Position = [252 655 85 22];
+            app.ModalityEditField.Position = [252 405 85 22];
 
             % Create PatientNameEditFieldLabel
             app.PatientNameEditFieldLabel = uilabel(app.Panel_3);
@@ -1013,7 +1022,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.PatientNameEditFieldLabel.VerticalAlignment = 'top';
             app.PatientNameEditFieldLabel.FontWeight = 'bold';
             app.PatientNameEditFieldLabel.FontColor = [1 1 1];
-            app.PatientNameEditFieldLabel.Position = [11 618 79 15];
+            app.PatientNameEditFieldLabel.Position = [11 368 79 15];
             app.PatientNameEditFieldLabel.Text = 'PatientName';
 
             % Create PatientNameEditField
@@ -1021,7 +1030,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.PatientNameEditField.Editable = 'off';
             app.PatientNameEditField.FontColor = [1 1 1];
             app.PatientNameEditField.BackgroundColor = [0 0.451 0.7412];
-            app.PatientNameEditField.Position = [105 614 112 22];
+            app.PatientNameEditField.Position = [105 364 112 22];
 
             % Create PatientAgeEditFieldLabel
             app.PatientAgeEditFieldLabel = uilabel(app.Panel_3);
@@ -1030,7 +1039,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.PatientAgeEditFieldLabel.VerticalAlignment = 'top';
             app.PatientAgeEditFieldLabel.FontWeight = 'bold';
             app.PatientAgeEditFieldLabel.FontColor = [1 1 1];
-            app.PatientAgeEditFieldLabel.Position = [11 577 71 15];
+            app.PatientAgeEditFieldLabel.Position = [11 327 71 15];
             app.PatientAgeEditFieldLabel.Text = 'Patient Age';
 
             % Create PatientAgeEditField
@@ -1038,7 +1047,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.PatientAgeEditField.Editable = 'off';
             app.PatientAgeEditField.FontColor = [1 1 1];
             app.PatientAgeEditField.BackgroundColor = [0 0.451 0.7412];
-            app.PatientAgeEditField.Position = [97 573 100 22];
+            app.PatientAgeEditField.Position = [97 323 100 22];
 
             % Create BodypartexaminedEditFieldLabel
             app.BodypartexaminedEditFieldLabel = uilabel(app.Panel_3);
@@ -1047,7 +1056,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.BodypartexaminedEditFieldLabel.VerticalAlignment = 'top';
             app.BodypartexaminedEditFieldLabel.FontWeight = 'bold';
             app.BodypartexaminedEditFieldLabel.FontColor = [1 1 1];
-            app.BodypartexaminedEditFieldLabel.Position = [11 536 120 15];
+            app.BodypartexaminedEditFieldLabel.Position = [11 286 120 15];
             app.BodypartexaminedEditFieldLabel.Text = 'Body part examined';
 
             % Create BodyPartExaminedEditField
@@ -1055,7 +1064,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.BodyPartExaminedEditField.Editable = 'off';
             app.BodyPartExaminedEditField.FontColor = [1 1 1];
             app.BodyPartExaminedEditField.BackgroundColor = [0 0.451 0.7412];
-            app.BodyPartExaminedEditField.Position = [146 532 100 22];
+            app.BodyPartExaminedEditField.Position = [146 282 100 22];
 
             % Create BrowseButton
             app.BrowseButton = uibutton(app.Panel_3, 'push');
@@ -1063,7 +1072,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.BrowseButton.BackgroundColor = [1 1 1];
             app.BrowseButton.FontWeight = 'bold';
             app.BrowseButton.FontColor = [0 0.4471 0.7412];
-            app.BrowseButton.Position = [10 261 114 33];
+            app.BrowseButton.Position = [10 11 114 33];
             app.BrowseButton.Text = 'Browse';
 
             % Create BackgroundLabel
@@ -1071,20 +1080,20 @@ classdef Image_Processing < matlab.apps.AppBase
             app.BackgroundLabel.HorizontalAlignment = 'center';
             app.BackgroundLabel.FontSize = 20;
             app.BackgroundLabel.FontColor = [0.651 0.651 0.651];
-            app.BackgroundLabel.Position = [5 491 334 63];
+            app.BackgroundLabel.Position = [5 241 334 63];
             app.BackgroundLabel.Text = 'Open a .jpg , .bmp, or .dcm image.';
 
             % Create Panel_4
             app.Panel_4 = uipanel(app.ImageviewerTab);
             app.Panel_4.BorderType = 'none';
             app.Panel_4.BackgroundColor = [0 0 0];
-            app.Panel_4.Position = [342 -1 873 511];
+            app.Panel_4.Position = [342 0 872 510];
 
             % Create UIAxes
             app.UIAxes = uiaxes(app.Panel_4);
             app.UIAxes.Colormap = [0.2431 0.149 0.6588;0.251 0.1647 0.7059;0.2588 0.1804 0.7529;0.2627 0.1961 0.7961;0.2706 0.2157 0.8353;0.2745 0.2353 0.8706;0.2784 0.2549 0.898;0.2784 0.2784 0.9216;0.2824 0.302 0.9412;0.2824 0.3216 0.9569;0.2784 0.3451 0.9725;0.2745 0.3686 0.9843;0.2706 0.3882 0.9922;0.2588 0.4118 0.9961;0.2431 0.4353 1;0.2196 0.4588 0.9961;0.1961 0.4863 0.9882;0.1843 0.5059 0.9804;0.1804 0.5294 0.9686;0.1765 0.549 0.9529;0.1686 0.5686 0.9373;0.1529 0.5922 0.9216;0.1451 0.6078 0.9098;0.1373 0.6275 0.898;0.1255 0.6471 0.8902;0.1098 0.6627 0.8745;0.0941 0.6784 0.8588;0.0706 0.6941 0.8392;0.0314 0.7098 0.8157;0.0039 0.7216 0.7922;0.0078 0.7294 0.7647;0.0431 0.7412 0.7412;0.098 0.749 0.7137;0.1412 0.7569 0.6824;0.1725 0.7686 0.6549;0.1922 0.7765 0.6235;0.2157 0.7843 0.5922;0.2471 0.7922 0.5569;0.2902 0.7961 0.5176;0.3412 0.8 0.4784;0.3922 0.8039 0.4353;0.4471 0.8039 0.3922;0.5059 0.8 0.349;0.5608 0.7961 0.3059;0.6157 0.7882 0.2627;0.6706 0.7804 0.2235;0.7255 0.7686 0.1922;0.7725 0.7608 0.1647;0.8196 0.749 0.1529;0.8627 0.7412 0.1608;0.902 0.7333 0.1765;0.9412 0.7294 0.2118;0.9725 0.7294 0.2392;0.9961 0.7451 0.2353;0.9961 0.7647 0.2196;0.9961 0.7882 0.2039;0.9882 0.8118 0.1882;0.9804 0.8392 0.1765;0.9686 0.8627 0.1647;0.9608 0.8902 0.1529;0.9608 0.9137 0.1412;0.9647 0.9373 0.1255;0.9686 0.9608 0.1059;0.9765 0.9843 0.0824];
             app.UIAxes.Color = [0 0 0];
-            app.UIAxes.Position = [238 62 398 349];
+            app.UIAxes.Position = [238 61 398 349];
 
             % Create WhiteimageTab
             app.WhiteimageTab = uitab(app.TabGroup);
@@ -1101,7 +1110,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.Panel_2 = uipanel(app.WhiteimageTab);
             app.Panel_2.BorderType = 'none';
             app.Panel_2.BackgroundColor = [0 0.451 0.7412];
-            app.Panel_2.Position = [1 -250 145 760];
+            app.Panel_2.Position = [1 0 145 510];
 
             % Create WhiteImageButton
             app.WhiteImageButton = uibutton(app.Panel_2, 'push');
@@ -1109,7 +1118,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.WhiteImageButton.BackgroundColor = [1 1 1];
             app.WhiteImageButton.FontWeight = 'bold';
             app.WhiteImageButton.FontColor = [0 0.4471 0.7412];
-            app.WhiteImageButton.Position = [23 573 100 36];
+            app.WhiteImageButton.Position = [23 323 100 36];
             app.WhiteImageButton.Text = 'White Image';
 
             % Create ColorPixelsButton
@@ -1118,7 +1127,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.ColorPixelsButton.BackgroundColor = [1 1 1];
             app.ColorPixelsButton.FontWeight = 'bold';
             app.ColorPixelsButton.FontColor = [0 0.4471 0.7412];
-            app.ColorPixelsButton.Position = [23 429 100 36];
+            app.ColorPixelsButton.Position = [23 179 100 36];
             app.ColorPixelsButton.Text = 'Color Pixels';
 
             % Create ZoomTab
@@ -1130,14 +1139,14 @@ classdef Image_Processing < matlab.apps.AppBase
             app.Panel = uipanel(app.ZoomTab);
             app.Panel.BorderType = 'none';
             app.Panel.BackgroundColor = [0 0.451 0.7412];
-            app.Panel.Position = [1 -250 145 760];
+            app.Panel.Position = [1 1 145 509];
 
             % Create FactorEditFieldLabel
             app.FactorEditFieldLabel = uilabel(app.Panel);
             app.FactorEditFieldLabel.BackgroundColor = [0 0.451 0.7412];
             app.FactorEditFieldLabel.VerticalAlignment = 'top';
             app.FactorEditFieldLabel.FontColor = [1 1 1];
-            app.FactorEditFieldLabel.Position = [9 626 42 15];
+            app.FactorEditFieldLabel.Position = [9 375 42 15];
             app.FactorEditFieldLabel.Text = 'Factor:';
 
             % Create FactorEditField
@@ -1147,7 +1156,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.FactorEditField.HorizontalAlignment = 'left';
             app.FactorEditField.FontColor = [1 1 1];
             app.FactorEditField.BackgroundColor = [0 0.451 0.7412];
-            app.FactorEditField.Position = [66 622 60 22];
+            app.FactorEditField.Position = [66 371 60 22];
             app.FactorEditField.Value = 1;
 
             % Create ApplyButton
@@ -1156,7 +1165,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.ApplyButton.BackgroundColor = [1 1 1];
             app.ApplyButton.FontWeight = 'bold';
             app.ApplyButton.FontColor = [0 0.4471 0.7412];
-            app.ApplyButton.Position = [20 393 100 46];
+            app.ApplyButton.Position = [20 142 100 46];
             app.ApplyButton.Text = 'Apply';
 
             % Create NearestneighborinterpolationPanel
@@ -1200,13 +1209,13 @@ classdef Image_Processing < matlab.apps.AppBase
             % Create HistogramTab_2
             app.HistogramTab_2 = uitab(app.TabGroup);
             app.HistogramTab_2.Title = 'Histogram';
-            app.HistogramTab_2.BackgroundColor = [0 0.4471 0.7412];
+            app.HistogramTab_2.BackgroundColor = [0 0 0];
 
             % Create Panel_9
             app.Panel_9 = uipanel(app.HistogramTab_2);
             app.Panel_9.BorderType = 'none';
             app.Panel_9.BackgroundColor = [0 0.451 0.7412];
-            app.Panel_9.Position = [1 -250 145 760];
+            app.Panel_9.Position = [1 0 145 510];
 
             % Create ShowHistogramButton
             app.ShowHistogramButton = uibutton(app.Panel_9, 'push');
@@ -1214,7 +1223,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.ShowHistogramButton.BackgroundColor = [1 1 1];
             app.ShowHistogramButton.FontWeight = 'bold';
             app.ShowHistogramButton.FontColor = [0 0.4471 0.7412];
-            app.ShowHistogramButton.Position = [20 602 110 46];
+            app.ShowHistogramButton.Position = [20 352 110 46];
             app.ShowHistogramButton.Text = 'Show Histogram';
 
             % Create EqualizeandShowButton
@@ -1223,7 +1232,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.EqualizeandShowButton.BackgroundColor = [1 1 1];
             app.EqualizeandShowButton.FontWeight = 'bold';
             app.EqualizeandShowButton.FontColor = [0 0.4471 0.7412];
-            app.EqualizeandShowButton.Position = [12 400 124 46];
+            app.EqualizeandShowButton.Position = [12 150 124 46];
             app.EqualizeandShowButton.Text = 'Equalize and Show';
 
             % Create OriginalImagePanel
@@ -1252,13 +1261,13 @@ classdef Image_Processing < matlab.apps.AppBase
             app.EqualizedImagePanel.BackgroundColor = [0 0 0];
             app.EqualizedImagePanel.FontWeight = 'bold';
             app.EqualizedImagePanel.Scrollable = 'on';
-            app.EqualizedImagePanel.Position = [147 -1 535 258];
+            app.EqualizedImagePanel.Position = [147 3 535 254];
 
             % Create UIAxes5_2
             app.UIAxes5_2 = uiaxes(app.EqualizedImagePanel);
             app.UIAxes5_2.Colormap = [0.2431 0.149 0.6588;0.251 0.1647 0.7059;0.2588 0.1804 0.7529;0.2627 0.1961 0.7961;0.2706 0.2157 0.8353;0.2745 0.2353 0.8706;0.2784 0.2549 0.898;0.2784 0.2784 0.9216;0.2824 0.302 0.9412;0.2824 0.3216 0.9569;0.2784 0.3451 0.9725;0.2745 0.3686 0.9843;0.2706 0.3882 0.9922;0.2588 0.4118 0.9961;0.2431 0.4353 1;0.2196 0.4588 0.9961;0.1961 0.4863 0.9882;0.1843 0.5059 0.9804;0.1804 0.5294 0.9686;0.1765 0.549 0.9529;0.1686 0.5686 0.9373;0.1529 0.5922 0.9216;0.1451 0.6078 0.9098;0.1373 0.6275 0.898;0.1255 0.6471 0.8902;0.1098 0.6627 0.8745;0.0941 0.6784 0.8588;0.0706 0.6941 0.8392;0.0314 0.7098 0.8157;0.0039 0.7216 0.7922;0.0078 0.7294 0.7647;0.0431 0.7412 0.7412;0.098 0.749 0.7137;0.1412 0.7569 0.6824;0.1725 0.7686 0.6549;0.1922 0.7765 0.6235;0.2157 0.7843 0.5922;0.2471 0.7922 0.5569;0.2902 0.7961 0.5176;0.3412 0.8 0.4784;0.3922 0.8039 0.4353;0.4471 0.8039 0.3922;0.5059 0.8 0.349;0.5608 0.7961 0.3059;0.6157 0.7882 0.2627;0.6706 0.7804 0.2235;0.7255 0.7686 0.1922;0.7725 0.7608 0.1647;0.8196 0.749 0.1529;0.8627 0.7412 0.1608;0.902 0.7333 0.1765;0.9412 0.7294 0.2118;0.9725 0.7294 0.2392;0.9961 0.7451 0.2353;0.9961 0.7647 0.2196;0.9961 0.7882 0.2039;0.9882 0.8118 0.1882;0.9804 0.8392 0.1765;0.9686 0.8627 0.1647;0.9608 0.8902 0.1529;0.9608 0.9137 0.1412;0.9647 0.9373 0.1255;0.9686 0.9608 0.1059;0.9765 0.9843 0.0824];
             app.UIAxes5_2.Color = [0 0 0];
-            app.UIAxes5_2.Position = [91 35 300 185];
+            app.UIAxes5_2.Position = [91 31 300 185];
 
             % Create NormalizedHistogramoforiginalimagePanel
             app.NormalizedHistogramoforiginalimagePanel = uipanel(app.HistogramTab_2);
@@ -1287,7 +1296,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.NormalizedHistogramofEqualizedImagePanel.BackgroundColor = [0 0 0];
             app.NormalizedHistogramofEqualizedImagePanel.FontWeight = 'bold';
             app.NormalizedHistogramofEqualizedImagePanel.Scrollable = 'on';
-            app.NormalizedHistogramofEqualizedImagePanel.Position = [681 -1 535 258];
+            app.NormalizedHistogramofEqualizedImagePanel.Position = [681 3 533 254];
 
             % Create UIAxes6_2
             app.UIAxes6_2 = uiaxes(app.NormalizedHistogramofEqualizedImagePanel);
@@ -1295,7 +1304,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.UIAxes6_2.XColor = [1 1 1];
             app.UIAxes6_2.YColor = [1 1 1];
             app.UIAxes6_2.GridColor = [0 0 0];
-            app.UIAxes6_2.Position = [1 5 533 229];
+            app.UIAxes6_2.Position = [1 8 533 222];
 
             % Create SpatialFilteringTab
             app.SpatialFilteringTab = uitab(app.TabGroup);
@@ -1305,14 +1314,14 @@ classdef Image_Processing < matlab.apps.AppBase
             app.Panel_10 = uipanel(app.SpatialFilteringTab);
             app.Panel_10.BorderType = 'none';
             app.Panel_10.BackgroundColor = [0 0.451 0.7412];
-            app.Panel_10.Position = [1 -250 145 760];
+            app.Panel_10.Position = [1 0 145 510];
 
             % Create KernelSizeLabel
             app.KernelSizeLabel = uilabel(app.Panel_10);
             app.KernelSizeLabel.BackgroundColor = [0 0.451 0.7412];
             app.KernelSizeLabel.VerticalAlignment = 'top';
             app.KernelSizeLabel.FontColor = [1 1 1];
-            app.KernelSizeLabel.Position = [9 619 70 22];
+            app.KernelSizeLabel.Position = [9 369 70 22];
             app.KernelSizeLabel.Text = 'Kernel Size:';
 
             % Create KernelSizeEditField
@@ -1322,7 +1331,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.KernelSizeEditField.HorizontalAlignment = 'left';
             app.KernelSizeEditField.FontColor = [1 1 1];
             app.KernelSizeEditField.BackgroundColor = [0 0.451 0.7412];
-            app.KernelSizeEditField.Position = [80 622 56 22];
+            app.KernelSizeEditField.Position = [80 372 56 22];
             app.KernelSizeEditField.Value = 1;
 
             % Create EnhanceButton
@@ -1331,7 +1340,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.EnhanceButton.BackgroundColor = [1 1 1];
             app.EnhanceButton.FontWeight = 'bold';
             app.EnhanceButton.FontColor = [0 0.4471 0.7412];
-            app.EnhanceButton.Position = [20 393 100 46];
+            app.EnhanceButton.Position = [20 143 100 46];
             app.EnhanceButton.Text = 'Enhance';
 
             % Create FactorEditField_2Label
@@ -1339,7 +1348,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.FactorEditField_2Label.BackgroundColor = [0 0.451 0.7412];
             app.FactorEditField_2Label.VerticalAlignment = 'top';
             app.FactorEditField_2Label.FontColor = [1 1 1];
-            app.FactorEditField_2Label.Position = [9 572 43 22];
+            app.FactorEditField_2Label.Position = [9 322 43 22];
             app.FactorEditField_2Label.Text = 'Factor:';
 
             % Create FactorEditField_2
@@ -1348,7 +1357,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.FactorEditField_2.HorizontalAlignment = 'left';
             app.FactorEditField_2.FontColor = [1 1 1];
             app.FactorEditField_2.BackgroundColor = [0 0.451 0.7412];
-            app.FactorEditField_2.Position = [80 575 56 22];
+            app.FactorEditField_2.Position = [80 325 56 22];
             app.FactorEditField_2.Value = 1;
 
             % Create OriginalImagePanel_2
@@ -1397,7 +1406,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.Panel_11 = uipanel(app.FourierTab);
             app.Panel_11.BorderType = 'none';
             app.Panel_11.BackgroundColor = [0 0.451 0.7412];
-            app.Panel_11.Position = [1 -250 145 760];
+            app.Panel_11.Position = [1 1 145 509];
 
             % Create ShowButton
             app.ShowButton = uibutton(app.Panel_11, 'push');
@@ -1405,7 +1414,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.ShowButton.BackgroundColor = [1 1 1];
             app.ShowButton.FontWeight = 'bold';
             app.ShowButton.FontColor = [0 0.4471 0.7412];
-            app.ShowButton.Position = [23 488 100 36];
+            app.ShowButton.Position = [23 237 100 36];
             app.ShowButton.Text = 'Show';
 
             % Create FromEditFieldLabel
@@ -1413,7 +1422,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.FromEditFieldLabel.BackgroundColor = [0 0.451 0.7412];
             app.FromEditFieldLabel.VerticalAlignment = 'top';
             app.FromEditFieldLabel.FontColor = [1 1 1];
-            app.FromEditFieldLabel.Position = [8 602 33 22];
+            app.FromEditFieldLabel.Position = [8 351 33 22];
             app.FromEditFieldLabel.Text = 'From';
 
             % Create FromEditField
@@ -1423,14 +1432,14 @@ classdef Image_Processing < matlab.apps.AppBase
             app.FromEditField.HorizontalAlignment = 'left';
             app.FromEditField.FontColor = [1 1 1];
             app.FromEditField.BackgroundColor = [0 0.451 0.7412];
-            app.FromEditField.Position = [79 605 56 22];
+            app.FromEditField.Position = [79 354 56 22];
 
             % Create RemoveFrequencyLabel
             app.RemoveFrequencyLabel = uilabel(app.Panel_11);
             app.RemoveFrequencyLabel.HorizontalAlignment = 'center';
             app.RemoveFrequencyLabel.FontWeight = 'bold';
             app.RemoveFrequencyLabel.FontColor = [1 1 1];
-            app.RemoveFrequencyLabel.Position = [10 655 120 22];
+            app.RemoveFrequencyLabel.Position = [10 404 120 22];
             app.RemoveFrequencyLabel.Text = 'Remove Frequency ';
 
             % Create ToEditFieldLabel
@@ -1438,7 +1447,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.ToEditFieldLabel.BackgroundColor = [0 0.451 0.7412];
             app.ToEditFieldLabel.VerticalAlignment = 'top';
             app.ToEditFieldLabel.FontColor = [1 1 1];
-            app.ToEditFieldLabel.Position = [9 563 25 22];
+            app.ToEditFieldLabel.Position = [9 312 25 22];
             app.ToEditFieldLabel.Text = 'To';
 
             % Create ToEditField
@@ -1448,7 +1457,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.ToEditField.HorizontalAlignment = 'left';
             app.ToEditField.FontColor = [1 1 1];
             app.ToEditField.BackgroundColor = [0 0.451 0.7412];
-            app.ToEditField.Position = [80 566 56 22];
+            app.ToEditField.Position = [80 315 56 22];
 
             % Create OriginalImagePanel_3
             app.OriginalImagePanel_3 = uipanel(app.FourierTab);
@@ -1521,14 +1530,14 @@ classdef Image_Processing < matlab.apps.AppBase
             app.OriginalImagePanel_4.FontWeight = 'bold';
             app.OriginalImagePanel_4.Scrollable = 'on';
             app.OriginalImagePanel_4.FontSize = 14;
-            app.OriginalImagePanel_4.Position = [146 0 365 509];
+            app.OriginalImagePanel_4.Position = [146 1 365 508];
 
             % Create UIAxes3_9
             app.UIAxes3_9 = uiaxes(app.OriginalImagePanel_4);
             app.UIAxes3_9.PlotBoxAspectRatio = [1.25279642058166 1 1];
             app.UIAxes3_9.Colormap = [0.2431 0.149 0.6588;0.251 0.1647 0.7059;0.2588 0.1804 0.7529;0.2627 0.1961 0.7961;0.2706 0.2157 0.8353;0.2745 0.2353 0.8706;0.2784 0.2549 0.898;0.2784 0.2784 0.9216;0.2824 0.302 0.9412;0.2824 0.3216 0.9569;0.2784 0.3451 0.9725;0.2745 0.3686 0.9843;0.2706 0.3882 0.9922;0.2588 0.4118 0.9961;0.2431 0.4353 1;0.2196 0.4588 0.9961;0.1961 0.4863 0.9882;0.1843 0.5059 0.9804;0.1804 0.5294 0.9686;0.1765 0.549 0.9529;0.1686 0.5686 0.9373;0.1529 0.5922 0.9216;0.1451 0.6078 0.9098;0.1373 0.6275 0.898;0.1255 0.6471 0.8902;0.1098 0.6627 0.8745;0.0941 0.6784 0.8588;0.0706 0.6941 0.8392;0.0314 0.7098 0.8157;0.0039 0.7216 0.7922;0.0078 0.7294 0.7647;0.0431 0.7412 0.7412;0.098 0.749 0.7137;0.1412 0.7569 0.6824;0.1725 0.7686 0.6549;0.1922 0.7765 0.6235;0.2157 0.7843 0.5922;0.2471 0.7922 0.5569;0.2902 0.7961 0.5176;0.3412 0.8 0.4784;0.3922 0.8039 0.4353;0.4471 0.8039 0.3922;0.5059 0.8 0.349;0.5608 0.7961 0.3059;0.6157 0.7882 0.2627;0.6706 0.7804 0.2235;0.7255 0.7686 0.1922;0.7725 0.7608 0.1647;0.8196 0.749 0.1529;0.8627 0.7412 0.1608;0.902 0.7333 0.1765;0.9412 0.7294 0.2118;0.9725 0.7294 0.2392;0.9961 0.7451 0.2353;0.9961 0.7647 0.2196;0.9961 0.7882 0.2039;0.9882 0.8118 0.1882;0.9804 0.8392 0.1765;0.9686 0.8627 0.1647;0.9608 0.8902 0.1529;0.9608 0.9137 0.1412;0.9647 0.9373 0.1255;0.9686 0.9608 0.1059;0.9765 0.9843 0.0824];
             app.UIAxes3_9.Color = [0 0 0];
-            app.UIAxes3_9.Position = [1 3 306 399];
+            app.UIAxes3_9.Position = [1 2 306 399];
 
             % Create FourierfilteredImagePanel
             app.FourierfilteredImagePanel = uipanel(app.FourierfilterTab);
@@ -1547,7 +1556,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.UIAxes3_10.PlotBoxAspectRatio = [1.25279642058166 1 1];
             app.UIAxes3_10.Colormap = [0.2431 0.149 0.6588;0.251 0.1647 0.7059;0.2588 0.1804 0.7529;0.2627 0.1961 0.7961;0.2706 0.2157 0.8353;0.2745 0.2353 0.8706;0.2784 0.2549 0.898;0.2784 0.2784 0.9216;0.2824 0.302 0.9412;0.2824 0.3216 0.9569;0.2784 0.3451 0.9725;0.2745 0.3686 0.9843;0.2706 0.3882 0.9922;0.2588 0.4118 0.9961;0.2431 0.4353 1;0.2196 0.4588 0.9961;0.1961 0.4863 0.9882;0.1843 0.5059 0.9804;0.1804 0.5294 0.9686;0.1765 0.549 0.9529;0.1686 0.5686 0.9373;0.1529 0.5922 0.9216;0.1451 0.6078 0.9098;0.1373 0.6275 0.898;0.1255 0.6471 0.8902;0.1098 0.6627 0.8745;0.0941 0.6784 0.8588;0.0706 0.6941 0.8392;0.0314 0.7098 0.8157;0.0039 0.7216 0.7922;0.0078 0.7294 0.7647;0.0431 0.7412 0.7412;0.098 0.749 0.7137;0.1412 0.7569 0.6824;0.1725 0.7686 0.6549;0.1922 0.7765 0.6235;0.2157 0.7843 0.5922;0.2471 0.7922 0.5569;0.2902 0.7961 0.5176;0.3412 0.8 0.4784;0.3922 0.8039 0.4353;0.4471 0.8039 0.3922;0.5059 0.8 0.349;0.5608 0.7961 0.3059;0.6157 0.7882 0.2627;0.6706 0.7804 0.2235;0.7255 0.7686 0.1922;0.7725 0.7608 0.1647;0.8196 0.749 0.1529;0.8627 0.7412 0.1608;0.902 0.7333 0.1765;0.9412 0.7294 0.2118;0.9725 0.7294 0.2392;0.9961 0.7451 0.2353;0.9961 0.7647 0.2196;0.9961 0.7882 0.2039;0.9882 0.8118 0.1882;0.9804 0.8392 0.1765;0.9686 0.8627 0.1647;0.9608 0.8902 0.1529;0.9608 0.9137 0.1412;0.9647 0.9373 0.1255;0.9686 0.9608 0.1059;0.9765 0.9843 0.0824];
             app.UIAxes3_10.Color = [0 0 0];
-            app.UIAxes3_10.Position = [1 3 306 399];
+            app.UIAxes3_10.Position = [1 4 306 398];
 
             % Create DifferencePanel
             app.DifferencePanel = uipanel(app.FourierfilterTab);
@@ -1572,14 +1581,14 @@ classdef Image_Processing < matlab.apps.AppBase
             app.Panel_12 = uipanel(app.FourierfilterTab);
             app.Panel_12.BorderType = 'none';
             app.Panel_12.BackgroundColor = [0 0.451 0.7412];
-            app.Panel_12.Position = [1 -250 145 760];
+            app.Panel_12.Position = [1 2 145 508];
 
             % Create KernelSizeEditField_2Label
             app.KernelSizeEditField_2Label = uilabel(app.Panel_12);
             app.KernelSizeEditField_2Label.BackgroundColor = [0 0.451 0.7412];
             app.KernelSizeEditField_2Label.VerticalAlignment = 'top';
             app.KernelSizeEditField_2Label.FontColor = [1 1 1];
-            app.KernelSizeEditField_2Label.Position = [9 619 70 22];
+            app.KernelSizeEditField_2Label.Position = [9 367 70 22];
             app.KernelSizeEditField_2Label.Text = 'Kernel Size:';
 
             % Create KernelSizeEditField_2
@@ -1589,7 +1598,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.KernelSizeEditField_2.HorizontalAlignment = 'left';
             app.KernelSizeEditField_2.FontColor = [1 1 1];
             app.KernelSizeEditField_2.BackgroundColor = [0 0.451 0.7412];
-            app.KernelSizeEditField_2.Position = [80 622 56 22];
+            app.KernelSizeEditField_2.Position = [80 370 56 22];
             app.KernelSizeEditField_2.Value = 1;
 
             % Create EnhanceButton_2
@@ -1598,7 +1607,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.EnhanceButton_2.BackgroundColor = [1 1 1];
             app.EnhanceButton_2.FontWeight = 'bold';
             app.EnhanceButton_2.FontColor = [0 0.4471 0.7412];
-            app.EnhanceButton_2.Position = [20 393 100 46];
+            app.EnhanceButton_2.Position = [20 141 100 46];
             app.EnhanceButton_2.Text = 'Enhance';
 
             % Create FilterTypeButtonGroup
@@ -1610,7 +1619,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.FilterTypeButtonGroup.Title = 'Filter Type';
             app.FilterTypeButtonGroup.BackgroundColor = [0 0.4471 0.7412];
             app.FilterTypeButtonGroup.FontWeight = 'bold';
-            app.FilterTypeButtonGroup.Position = [12 482 123 106];
+            app.FilterTypeButtonGroup.Position = [12 230 123 106];
 
             % Create BoxButton
             app.BoxButton = uitogglebutton(app.FilterTypeButtonGroup);
@@ -1630,12 +1639,13 @@ classdef Image_Processing < matlab.apps.AppBase
             % Create NoiseTab
             app.NoiseTab = uitab(app.TabGroup);
             app.NoiseTab.Title = 'Noise';
+            app.NoiseTab.BackgroundColor = [0 0 0];
 
             % Create Panel_13
             app.Panel_13 = uipanel(app.NoiseTab);
             app.Panel_13.BorderType = 'none';
             app.Panel_13.BackgroundColor = [0 0.451 0.7412];
-            app.Panel_13.Position = [1 -250 145 760];
+            app.Panel_13.Position = [1 0 145 510];
 
             % Create ApplyButton_2
             app.ApplyButton_2 = uibutton(app.Panel_13, 'push');
@@ -1643,7 +1653,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.ApplyButton_2.BackgroundColor = [1 1 1];
             app.ApplyButton_2.FontWeight = 'bold';
             app.ApplyButton_2.FontColor = [0 0.4471 0.7412];
-            app.ApplyButton_2.Position = [23 424 100 46];
+            app.ApplyButton_2.Position = [23 174 100 46];
             app.ApplyButton_2.Text = 'Apply';
 
             % Create NoiseTypeButtonGroup
@@ -1655,7 +1665,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.NoiseTypeButtonGroup.Title = 'Noise Type';
             app.NoiseTypeButtonGroup.BackgroundColor = [0 0.4471 0.7412];
             app.NoiseTypeButtonGroup.FontWeight = 'bold';
-            app.NoiseTypeButtonGroup.Position = [12 507 123 129];
+            app.NoiseTypeButtonGroup.Position = [12 257 123 129];
 
             % Create GaussianButton
             app.GaussianButton = uitogglebutton(app.NoiseTypeButtonGroup);
@@ -1685,7 +1695,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.CreateImageButton.BackgroundColor = [1 1 1];
             app.CreateImageButton.FontWeight = 'bold';
             app.CreateImageButton.FontColor = [0 0.4471 0.7412];
-            app.CreateImageButton.Position = [23 671 100 46];
+            app.CreateImageButton.Position = [23 421 100 46];
             app.CreateImageButton.Text = 'Create Image';
 
             % Create ChooseROIButton
@@ -1694,7 +1704,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.ChooseROIButton.BackgroundColor = [1 1 1];
             app.ChooseROIButton.FontWeight = 'bold';
             app.ChooseROIButton.FontColor = [0 0.4471 0.7412];
-            app.ChooseROIButton.Position = [23 358 100 46];
+            app.ChooseROIButton.Position = [23 108 100 46];
             app.ChooseROIButton.Text = 'Choose ROI';
 
             % Create MeanEditFieldLabel
@@ -1703,7 +1713,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.MeanEditFieldLabel.VerticalAlignment = 'top';
             app.MeanEditFieldLabel.FontWeight = 'bold';
             app.MeanEditFieldLabel.FontColor = [1 1 1];
-            app.MeanEditFieldLabel.Position = [6 317 59 22];
+            app.MeanEditFieldLabel.Position = [6 67 59 22];
             app.MeanEditFieldLabel.Text = 'Mean';
 
             % Create MeanEditField
@@ -1711,7 +1721,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.MeanEditField.Editable = 'off';
             app.MeanEditField.FontColor = [1 1 1];
             app.MeanEditField.BackgroundColor = [0 0.451 0.7412];
-            app.MeanEditField.Position = [52 319 89 22];
+            app.MeanEditField.Position = [52 69 89 22];
 
             % Create segmaEditFieldLabel
             app.segmaEditFieldLabel = uilabel(app.Panel_13);
@@ -1719,7 +1729,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.segmaEditFieldLabel.VerticalAlignment = 'top';
             app.segmaEditFieldLabel.FontWeight = 'bold';
             app.segmaEditFieldLabel.FontColor = [1 1 1];
-            app.segmaEditFieldLabel.Position = [5 287 44 22];
+            app.segmaEditFieldLabel.Position = [5 37 44 22];
             app.segmaEditFieldLabel.Text = 'segma';
 
             % Create segmaEditField
@@ -1727,7 +1737,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.segmaEditField.Editable = 'off';
             app.segmaEditField.FontColor = [1 1 1];
             app.segmaEditField.BackgroundColor = [0 0.451 0.7412];
-            app.segmaEditField.Position = [51 289 89 22];
+            app.segmaEditField.Position = [51 39 89 22];
 
             % Create OriginalImagePanel_5
             app.OriginalImagePanel_5 = uipanel(app.NoiseTab);
@@ -1755,13 +1765,13 @@ classdef Image_Processing < matlab.apps.AppBase
             app.NoisyImagePanel.BackgroundColor = [0 0 0];
             app.NoisyImagePanel.FontWeight = 'bold';
             app.NoisyImagePanel.Scrollable = 'on';
-            app.NoisyImagePanel.Position = [680 256 535 254];
+            app.NoisyImagePanel.Position = [680 256 534 254];
 
             % Create UIAxes5_6
             app.UIAxes5_6 = uiaxes(app.NoisyImagePanel);
             app.UIAxes5_6.Colormap = [0.2431 0.149 0.6588;0.251 0.1647 0.7059;0.2588 0.1804 0.7529;0.2627 0.1961 0.7961;0.2706 0.2157 0.8353;0.2745 0.2353 0.8706;0.2784 0.2549 0.898;0.2784 0.2784 0.9216;0.2824 0.302 0.9412;0.2824 0.3216 0.9569;0.2784 0.3451 0.9725;0.2745 0.3686 0.9843;0.2706 0.3882 0.9922;0.2588 0.4118 0.9961;0.2431 0.4353 1;0.2196 0.4588 0.9961;0.1961 0.4863 0.9882;0.1843 0.5059 0.9804;0.1804 0.5294 0.9686;0.1765 0.549 0.9529;0.1686 0.5686 0.9373;0.1529 0.5922 0.9216;0.1451 0.6078 0.9098;0.1373 0.6275 0.898;0.1255 0.6471 0.8902;0.1098 0.6627 0.8745;0.0941 0.6784 0.8588;0.0706 0.6941 0.8392;0.0314 0.7098 0.8157;0.0039 0.7216 0.7922;0.0078 0.7294 0.7647;0.0431 0.7412 0.7412;0.098 0.749 0.7137;0.1412 0.7569 0.6824;0.1725 0.7686 0.6549;0.1922 0.7765 0.6235;0.2157 0.7843 0.5922;0.2471 0.7922 0.5569;0.2902 0.7961 0.5176;0.3412 0.8 0.4784;0.3922 0.8039 0.4353;0.4471 0.8039 0.3922;0.5059 0.8 0.349;0.5608 0.7961 0.3059;0.6157 0.7882 0.2627;0.6706 0.7804 0.2235;0.7255 0.7686 0.1922;0.7725 0.7608 0.1647;0.8196 0.749 0.1529;0.8627 0.7412 0.1608;0.902 0.7333 0.1765;0.9412 0.7294 0.2118;0.9725 0.7294 0.2392;0.9961 0.7451 0.2353;0.9961 0.7647 0.2196;0.9961 0.7882 0.2039;0.9882 0.8118 0.1882;0.9804 0.8392 0.1765;0.9686 0.8627 0.1647;0.9608 0.8902 0.1529;0.9608 0.9137 0.1412;0.9647 0.9373 0.1255;0.9686 0.9608 0.1059;0.9765 0.9843 0.0824];
             app.UIAxes5_6.Color = [0 0 0];
-            app.UIAxes5_6.Position = [147 26 300 185];
+            app.UIAxes5_6.Position = [147 -1 300 185];
 
             % Create ROIPanel
             app.ROIPanel = uipanel(app.NoiseTab);
@@ -1772,7 +1782,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.ROIPanel.BackgroundColor = [0 0 0];
             app.ROIPanel.FontWeight = 'bold';
             app.ROIPanel.Scrollable = 'on';
-            app.ROIPanel.Position = [147 -1 535 258];
+            app.ROIPanel.Position = [147 0 535 258];
 
             % Create UIAxes5_5
             app.UIAxes5_5 = uiaxes(app.ROIPanel);
@@ -1789,7 +1799,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.HistogramofROIPanel.BackgroundColor = [0 0 0];
             app.HistogramofROIPanel.FontWeight = 'bold';
             app.HistogramofROIPanel.Scrollable = 'on';
-            app.HistogramofROIPanel.Position = [681 -1 535 258];
+            app.HistogramofROIPanel.Position = [681 1 533 257];
 
             % Create UIAxes6_3
             app.UIAxes6_3 = uiaxes(app.HistogramofROIPanel);
@@ -1797,7 +1807,7 @@ classdef Image_Processing < matlab.apps.AppBase
             app.UIAxes6_3.XColor = [1 1 1];
             app.UIAxes6_3.YColor = [1 1 1];
             app.UIAxes6_3.GridColor = [0.15 0.15 0.15];
-            app.UIAxes6_3.Position = [8 2 526 229];
+            app.UIAxes6_3.Position = [8 11 526 219];
 
             % Show the figure after all components are created
             app.UIFigure.Visible = 'on';
