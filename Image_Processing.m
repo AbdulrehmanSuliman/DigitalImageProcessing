@@ -114,6 +114,26 @@ classdef Image_Processing < matlab.apps.AppBase
         UniformButton                   matlab.ui.control.ToggleButton
         GaussianButton                  matlab.ui.control.ToggleButton
         ApplyButton_2                   matlab.ui.control.Button
+        BackProjectionTab               matlab.ui.container.Tab
+        Panel_14                        matlab.ui.container.Panel
+        defualtCheckBox                 matlab.ui.control.CheckBox
+        getsinogramButton               matlab.ui.control.Button
+        stepsizeEditField               matlab.ui.control.NumericEditField
+        stepsizeEditFieldLabel          matlab.ui.control.Label
+        MaxAngleEditField               matlab.ui.control.NumericEditField
+        MaxAngleEditFieldLabel          matlab.ui.control.Label
+        CreatephantomButton             matlab.ui.control.Button
+        FilterTypeButtonGroup_2         matlab.ui.container.ButtonGroup
+        HammingButton                   matlab.ui.control.ToggleButton
+        RamLakButton                    matlab.ui.control.ToggleButton
+        NoneButton                      matlab.ui.control.ToggleButton
+        getlaminogramButton             matlab.ui.control.Button
+        LaminogramPanel                 matlab.ui.container.Panel
+        UIAxes3_14                      matlab.ui.control.UIAxes
+        sinogramPanel                   matlab.ui.container.Panel
+        UIAxes3_13                      matlab.ui.control.UIAxes
+        OriginalImagePanel_6            matlab.ui.container.Panel
+        UIAxes3_12                      matlab.ui.control.UIAxes
         UIAxes3_3                       matlab.ui.control.UIAxes
     end
 
@@ -137,6 +157,13 @@ classdef Image_Processing < matlab.apps.AppBase
         noiseType % type of noise to apply
         roiImage % the region of interest image
         noisyImage % noised image
+        maxAngle % max angle for sinogram
+        step % step of angle 
+        Theta % list of angles
+        backProjPhantom % back Projection Phantom
+        backProjFilter % back Projection Filter type
+        sinogram % sinogramImage
+        defualtTheta % defualt theta for sinogram
     end
     
     methods (Access = private)
@@ -249,6 +276,11 @@ classdef Image_Processing < matlab.apps.AppBase
             app.segmaEditField.Visible='off';
             app.MeanEditFieldLabel.Visible='off';
             app.segmaEditFieldLabel.Visible='off';
+            app.step=1;
+            app.maxAngle=1;
+            app.backProjFilter=app.NoneButton;
+            app.getsinogramButton.Visible='off';
+            app.getlaminogramButton.Visible='off';
         end
 
         % Callback function
@@ -832,7 +864,7 @@ classdef Image_Processing < matlab.apps.AppBase
         % Button pushed function: ChooseROIButton
         function ChooseROIButtonPushed(app, event)
             % get the region of interest by drawing a rectangle
-%             try
+            try
                 
                 roi = drawrectangle(app.UIAxes5_6,'interactionsAllowed','none','Color',[1 0 0]);
                  p=uint8(roi.Position);
@@ -872,11 +904,72 @@ classdef Image_Processing < matlab.apps.AppBase
                 bar(histImage,'Parent',app.UIAxes6_3);
                 xline(mean,'Parent',app.UIAxes6_3,'Color','r');
                 delete(roi);
-%             catch
-%                  uialert(app.UIFigure ,'Please draw the rectangle inside the image.','Invalid input');
-%                  delete(roi);
-%             end
-%                 
+             catch
+                  uialert(app.UIFigure ,'Please draw the rectangle inside the image.','Invalid input');
+                  delete(roi);
+             end
+                 
+        end
+
+        % Button pushed function: CreatephantomButton
+        function CreatephantomButtonPushed(app, event)
+            %create the phantom image with size 256
+            app.backProjPhantom=phantom(256);
+             app.UIAxes3_12.Position=[1,20,256,256];
+            imshow(app.backProjPhantom,'Parent',app.UIAxes3_12);
+             app.getsinogramButton.Visible='on';
+        end
+
+        % Value changed function: MaxAngleEditField
+        function MaxAngleEditFieldValueChanged(app, event)
+            value = app.MaxAngleEditField.Value;
+            app.maxAngle=value;
+        end
+
+        % Value changed function: stepsizeEditField
+        function stepsizeEditFieldValueChanged(app, event)
+            value = app.stepsizeEditField.Value;
+            app.step=value;
+        end
+
+        % Button pushed function: getsinogramButton
+        function getsinogramButtonPushed(app, event)
+            if app.defualtTheta==1
+                %the first requirement 
+                app.Theta=[0 20 40 60 160];
+            else
+                %create theta as the user likes
+                app.Theta=0:app.step:app.maxAngle;
+            end
+            %perform radon transform
+            [app.sinogram,xp]=radon(app.backProjPhantom,app.Theta);
+            imshow(app.sinogram,[], 'Parent', app.UIAxes3_13,'XData', app.Theta,'YData',xp);
+            app.getlaminogramButton.Visible='on';
+        end
+
+        % Button pushed function: getlaminogramButton
+        function getlaminogramButtonPushed(app, event)
+            if app.backProjFilter==app.NoneButton
+                %perform back projection and re-construct image
+                reconstructionfbp=iradon(app.sinogram,app.Theta,'None');
+            elseif app.backProjFilter==app.RamLakButton
+                reconstructionfbp=iradon(app.sinogram,app.Theta,'Ram-Lak');
+            else
+                reconstructionfbp=iradon(app.sinogram,app.Theta,'Hamming');
+            end
+            imshow(reconstructionfbp,[], 'Parent', app.UIAxes3_14);
+        end
+
+        % Selection changed function: FilterTypeButtonGroup_2
+        function FilterTypeButtonGroup_2SelectionChanged(app, event)
+            selectedButton = app.FilterTypeButtonGroup_2.SelectedObject;
+            app.backProjFilter=selectedButton;
+        end
+
+        % Value changed function: defualtCheckBox
+        function defualtCheckBoxValueChanged(app, event)
+            value = app.defualtCheckBox.Value;
+            app.defualtTheta=value;
         end
     end
 
@@ -1808,6 +1901,178 @@ classdef Image_Processing < matlab.apps.AppBase
             app.UIAxes6_3.YColor = [1 1 1];
             app.UIAxes6_3.GridColor = [0.15 0.15 0.15];
             app.UIAxes6_3.Position = [8 11 526 219];
+
+            % Create BackProjectionTab
+            app.BackProjectionTab = uitab(app.TabGroup);
+            app.BackProjectionTab.Title = 'Back Projection';
+            app.BackProjectionTab.BackgroundColor = [0 0 0];
+
+            % Create OriginalImagePanel_6
+            app.OriginalImagePanel_6 = uipanel(app.BackProjectionTab);
+            app.OriginalImagePanel_6.ForegroundColor = [1 1 1];
+            app.OriginalImagePanel_6.BorderType = 'none';
+            app.OriginalImagePanel_6.TitlePosition = 'centertop';
+            app.OriginalImagePanel_6.Title = 'Original Image';
+            app.OriginalImagePanel_6.BackgroundColor = [0 0 0];
+            app.OriginalImagePanel_6.FontWeight = 'bold';
+            app.OriginalImagePanel_6.Scrollable = 'on';
+            app.OriginalImagePanel_6.FontSize = 14;
+            app.OriginalImagePanel_6.Position = [146 0 365 509];
+
+            % Create UIAxes3_12
+            app.UIAxes3_12 = uiaxes(app.OriginalImagePanel_6);
+            app.UIAxes3_12.PlotBoxAspectRatio = [1.25279642058166 1 1];
+            app.UIAxes3_12.Colormap = [0.2431 0.149 0.6588;0.251 0.1647 0.7059;0.2588 0.1804 0.7529;0.2627 0.1961 0.7961;0.2706 0.2157 0.8353;0.2745 0.2353 0.8706;0.2784 0.2549 0.898;0.2784 0.2784 0.9216;0.2824 0.302 0.9412;0.2824 0.3216 0.9569;0.2784 0.3451 0.9725;0.2745 0.3686 0.9843;0.2706 0.3882 0.9922;0.2588 0.4118 0.9961;0.2431 0.4353 1;0.2196 0.4588 0.9961;0.1961 0.4863 0.9882;0.1843 0.5059 0.9804;0.1804 0.5294 0.9686;0.1765 0.549 0.9529;0.1686 0.5686 0.9373;0.1529 0.5922 0.9216;0.1451 0.6078 0.9098;0.1373 0.6275 0.898;0.1255 0.6471 0.8902;0.1098 0.6627 0.8745;0.0941 0.6784 0.8588;0.0706 0.6941 0.8392;0.0314 0.7098 0.8157;0.0039 0.7216 0.7922;0.0078 0.7294 0.7647;0.0431 0.7412 0.7412;0.098 0.749 0.7137;0.1412 0.7569 0.6824;0.1725 0.7686 0.6549;0.1922 0.7765 0.6235;0.2157 0.7843 0.5922;0.2471 0.7922 0.5569;0.2902 0.7961 0.5176;0.3412 0.8 0.4784;0.3922 0.8039 0.4353;0.4471 0.8039 0.3922;0.5059 0.8 0.349;0.5608 0.7961 0.3059;0.6157 0.7882 0.2627;0.6706 0.7804 0.2235;0.7255 0.7686 0.1922;0.7725 0.7608 0.1647;0.8196 0.749 0.1529;0.8627 0.7412 0.1608;0.902 0.7333 0.1765;0.9412 0.7294 0.2118;0.9725 0.7294 0.2392;0.9961 0.7451 0.2353;0.9961 0.7647 0.2196;0.9961 0.7882 0.2039;0.9882 0.8118 0.1882;0.9804 0.8392 0.1765;0.9686 0.8627 0.1647;0.9608 0.8902 0.1529;0.9608 0.9137 0.1412;0.9647 0.9373 0.1255;0.9686 0.9608 0.1059;0.9765 0.9843 0.0824];
+            app.UIAxes3_12.Color = [0 0 0];
+            app.UIAxes3_12.Position = [1 3 306 399];
+
+            % Create sinogramPanel
+            app.sinogramPanel = uipanel(app.BackProjectionTab);
+            app.sinogramPanel.ForegroundColor = [1 1 1];
+            app.sinogramPanel.BorderType = 'none';
+            app.sinogramPanel.TitlePosition = 'centertop';
+            app.sinogramPanel.Title = 'sinogram';
+            app.sinogramPanel.BackgroundColor = [0 0 0];
+            app.sinogramPanel.FontWeight = 'bold';
+            app.sinogramPanel.Scrollable = 'on';
+            app.sinogramPanel.FontSize = 14;
+            app.sinogramPanel.Position = [510 0 353 509];
+
+            % Create UIAxes3_13
+            app.UIAxes3_13 = uiaxes(app.sinogramPanel);
+            app.UIAxes3_13.PlotBoxAspectRatio = [1.25279642058166 1 1];
+            app.UIAxes3_13.Colormap = [0.2431 0.149 0.6588;0.251 0.1647 0.7059;0.2588 0.1804 0.7529;0.2627 0.1961 0.7961;0.2706 0.2157 0.8353;0.2745 0.2353 0.8706;0.2784 0.2549 0.898;0.2784 0.2784 0.9216;0.2824 0.302 0.9412;0.2824 0.3216 0.9569;0.2784 0.3451 0.9725;0.2745 0.3686 0.9843;0.2706 0.3882 0.9922;0.2588 0.4118 0.9961;0.2431 0.4353 1;0.2196 0.4588 0.9961;0.1961 0.4863 0.9882;0.1843 0.5059 0.9804;0.1804 0.5294 0.9686;0.1765 0.549 0.9529;0.1686 0.5686 0.9373;0.1529 0.5922 0.9216;0.1451 0.6078 0.9098;0.1373 0.6275 0.898;0.1255 0.6471 0.8902;0.1098 0.6627 0.8745;0.0941 0.6784 0.8588;0.0706 0.6941 0.8392;0.0314 0.7098 0.8157;0.0039 0.7216 0.7922;0.0078 0.7294 0.7647;0.0431 0.7412 0.7412;0.098 0.749 0.7137;0.1412 0.7569 0.6824;0.1725 0.7686 0.6549;0.1922 0.7765 0.6235;0.2157 0.7843 0.5922;0.2471 0.7922 0.5569;0.2902 0.7961 0.5176;0.3412 0.8 0.4784;0.3922 0.8039 0.4353;0.4471 0.8039 0.3922;0.5059 0.8 0.349;0.5608 0.7961 0.3059;0.6157 0.7882 0.2627;0.6706 0.7804 0.2235;0.7255 0.7686 0.1922;0.7725 0.7608 0.1647;0.8196 0.749 0.1529;0.8627 0.7412 0.1608;0.902 0.7333 0.1765;0.9412 0.7294 0.2118;0.9725 0.7294 0.2392;0.9961 0.7451 0.2353;0.9961 0.7647 0.2196;0.9961 0.7882 0.2039;0.9882 0.8118 0.1882;0.9804 0.8392 0.1765;0.9686 0.8627 0.1647;0.9608 0.8902 0.1529;0.9608 0.9137 0.1412;0.9647 0.9373 0.1255;0.9686 0.9608 0.1059;0.9765 0.9843 0.0824];
+            app.UIAxes3_13.Color = [0 0 0];
+            app.UIAxes3_13.Position = [1 3 306 399];
+
+            % Create LaminogramPanel
+            app.LaminogramPanel = uipanel(app.BackProjectionTab);
+            app.LaminogramPanel.ForegroundColor = [1 1 1];
+            app.LaminogramPanel.BorderType = 'none';
+            app.LaminogramPanel.TitlePosition = 'centertop';
+            app.LaminogramPanel.Title = 'Laminogram';
+            app.LaminogramPanel.BackgroundColor = [0 0 0];
+            app.LaminogramPanel.FontWeight = 'bold';
+            app.LaminogramPanel.Scrollable = 'on';
+            app.LaminogramPanel.FontSize = 14;
+            app.LaminogramPanel.Position = [862 0 352 509];
+
+            % Create UIAxes3_14
+            app.UIAxes3_14 = uiaxes(app.LaminogramPanel);
+            app.UIAxes3_14.PlotBoxAspectRatio = [1.25279642058166 1 1];
+            app.UIAxes3_14.Colormap = [0.2431 0.149 0.6588;0.251 0.1647 0.7059;0.2588 0.1804 0.7529;0.2627 0.1961 0.7961;0.2706 0.2157 0.8353;0.2745 0.2353 0.8706;0.2784 0.2549 0.898;0.2784 0.2784 0.9216;0.2824 0.302 0.9412;0.2824 0.3216 0.9569;0.2784 0.3451 0.9725;0.2745 0.3686 0.9843;0.2706 0.3882 0.9922;0.2588 0.4118 0.9961;0.2431 0.4353 1;0.2196 0.4588 0.9961;0.1961 0.4863 0.9882;0.1843 0.5059 0.9804;0.1804 0.5294 0.9686;0.1765 0.549 0.9529;0.1686 0.5686 0.9373;0.1529 0.5922 0.9216;0.1451 0.6078 0.9098;0.1373 0.6275 0.898;0.1255 0.6471 0.8902;0.1098 0.6627 0.8745;0.0941 0.6784 0.8588;0.0706 0.6941 0.8392;0.0314 0.7098 0.8157;0.0039 0.7216 0.7922;0.0078 0.7294 0.7647;0.0431 0.7412 0.7412;0.098 0.749 0.7137;0.1412 0.7569 0.6824;0.1725 0.7686 0.6549;0.1922 0.7765 0.6235;0.2157 0.7843 0.5922;0.2471 0.7922 0.5569;0.2902 0.7961 0.5176;0.3412 0.8 0.4784;0.3922 0.8039 0.4353;0.4471 0.8039 0.3922;0.5059 0.8 0.349;0.5608 0.7961 0.3059;0.6157 0.7882 0.2627;0.6706 0.7804 0.2235;0.7255 0.7686 0.1922;0.7725 0.7608 0.1647;0.8196 0.749 0.1529;0.8627 0.7412 0.1608;0.902 0.7333 0.1765;0.9412 0.7294 0.2118;0.9725 0.7294 0.2392;0.9961 0.7451 0.2353;0.9961 0.7647 0.2196;0.9961 0.7882 0.2039;0.9882 0.8118 0.1882;0.9804 0.8392 0.1765;0.9686 0.8627 0.1647;0.9608 0.8902 0.1529;0.9608 0.9137 0.1412;0.9647 0.9373 0.1255;0.9686 0.9608 0.1059;0.9765 0.9843 0.0824];
+            app.UIAxes3_14.Color = [0 0 0];
+            app.UIAxes3_14.Position = [1 3 306 399];
+
+            % Create Panel_14
+            app.Panel_14 = uipanel(app.BackProjectionTab);
+            app.Panel_14.BorderType = 'none';
+            app.Panel_14.BackgroundColor = [0 0.451 0.7412];
+            app.Panel_14.Position = [1 0 145 510];
+
+            % Create getlaminogramButton
+            app.getlaminogramButton = uibutton(app.Panel_14, 'push');
+            app.getlaminogramButton.ButtonPushedFcn = createCallbackFcn(app, @getlaminogramButtonPushed, true);
+            app.getlaminogramButton.BackgroundColor = [1 1 1];
+            app.getlaminogramButton.FontWeight = 'bold';
+            app.getlaminogramButton.FontColor = [0 0.4471 0.7412];
+            app.getlaminogramButton.Position = [18 16 105 46];
+            app.getlaminogramButton.Text = 'get laminogram';
+
+            % Create FilterTypeButtonGroup_2
+            app.FilterTypeButtonGroup_2 = uibuttongroup(app.Panel_14);
+            app.FilterTypeButtonGroup_2.SelectionChangedFcn = createCallbackFcn(app, @FilterTypeButtonGroup_2SelectionChanged, true);
+            app.FilterTypeButtonGroup_2.ForegroundColor = [1 1 1];
+            app.FilterTypeButtonGroup_2.BorderType = 'none';
+            app.FilterTypeButtonGroup_2.TitlePosition = 'centertop';
+            app.FilterTypeButtonGroup_2.Title = 'Filter Type';
+            app.FilterTypeButtonGroup_2.BackgroundColor = [0 0.4471 0.7412];
+            app.FilterTypeButtonGroup_2.FontWeight = 'bold';
+            app.FilterTypeButtonGroup_2.Position = [8 144 123 129];
+
+            % Create NoneButton
+            app.NoneButton = uitogglebutton(app.FilterTypeButtonGroup_2);
+            app.NoneButton.Text = 'None';
+            app.NoneButton.BackgroundColor = [0.8 0.8 0.8];
+            app.NoneButton.FontColor = [1 1 1];
+            app.NoneButton.Position = [11 72 100 22];
+            app.NoneButton.Value = true;
+
+            % Create RamLakButton
+            app.RamLakButton = uitogglebutton(app.FilterTypeButtonGroup_2);
+            app.RamLakButton.Text = 'Ram-Lak';
+            app.RamLakButton.BackgroundColor = [0.651 0.651 0.651];
+            app.RamLakButton.FontColor = [1 1 1];
+            app.RamLakButton.Position = [11 40 100 22];
+
+            % Create HammingButton
+            app.HammingButton = uitogglebutton(app.FilterTypeButtonGroup_2);
+            app.HammingButton.Text = ' Hamming';
+            app.HammingButton.BackgroundColor = [0.651 0.651 0.651];
+            app.HammingButton.FontColor = [1 1 1];
+            app.HammingButton.Position = [11 8 100 22];
+
+            % Create CreatephantomButton
+            app.CreatephantomButton = uibutton(app.Panel_14, 'push');
+            app.CreatephantomButton.ButtonPushedFcn = createCallbackFcn(app, @CreatephantomButtonPushed, true);
+            app.CreatephantomButton.BackgroundColor = [1 1 1];
+            app.CreatephantomButton.FontWeight = 'bold';
+            app.CreatephantomButton.FontColor = [0 0.4471 0.7412];
+            app.CreatephantomButton.Position = [20 421 107 46];
+            app.CreatephantomButton.Text = 'Create phantom';
+
+            % Create MaxAngleEditFieldLabel
+            app.MaxAngleEditFieldLabel = uilabel(app.Panel_14);
+            app.MaxAngleEditFieldLabel.BackgroundColor = [0 0.451 0.7412];
+            app.MaxAngleEditFieldLabel.VerticalAlignment = 'top';
+            app.MaxAngleEditFieldLabel.FontColor = [1 1 1];
+            app.MaxAngleEditFieldLabel.Position = [8 364 65 22];
+            app.MaxAngleEditFieldLabel.Text = 'Max. Angle';
+
+            % Create MaxAngleEditField
+            app.MaxAngleEditField = uieditfield(app.Panel_14, 'numeric');
+            app.MaxAngleEditField.Limits = [0 360];
+            app.MaxAngleEditField.ValueChangedFcn = createCallbackFcn(app, @MaxAngleEditFieldValueChanged, true);
+            app.MaxAngleEditField.HorizontalAlignment = 'left';
+            app.MaxAngleEditField.FontColor = [1 1 1];
+            app.MaxAngleEditField.BackgroundColor = [0 0.451 0.7412];
+            app.MaxAngleEditField.Position = [79 367 56 22];
+            app.MaxAngleEditField.Value = 1;
+
+            % Create stepsizeEditFieldLabel
+            app.stepsizeEditFieldLabel = uilabel(app.Panel_14);
+            app.stepsizeEditFieldLabel.BackgroundColor = [0 0.451 0.7412];
+            app.stepsizeEditFieldLabel.VerticalAlignment = 'top';
+            app.stepsizeEditFieldLabel.FontColor = [1 1 1];
+            app.stepsizeEditFieldLabel.Position = [9 324 56 22];
+            app.stepsizeEditFieldLabel.Text = 'step size';
+
+            % Create stepsizeEditField
+            app.stepsizeEditField = uieditfield(app.Panel_14, 'numeric');
+            app.stepsizeEditField.Limits = [0.01 Inf];
+            app.stepsizeEditField.ValueChangedFcn = createCallbackFcn(app, @stepsizeEditFieldValueChanged, true);
+            app.stepsizeEditField.HorizontalAlignment = 'left';
+            app.stepsizeEditField.FontColor = [1 1 1];
+            app.stepsizeEditField.BackgroundColor = [0 0.451 0.7412];
+            app.stepsizeEditField.Position = [80 327 56 22];
+            app.stepsizeEditField.Value = 1;
+
+            % Create getsinogramButton
+            app.getsinogramButton = uibutton(app.Panel_14, 'push');
+            app.getsinogramButton.ButtonPushedFcn = createCallbackFcn(app, @getsinogramButtonPushed, true);
+            app.getsinogramButton.BackgroundColor = [1 1 1];
+            app.getsinogramButton.FontWeight = 'bold';
+            app.getsinogramButton.FontColor = [0 0.4471 0.7412];
+            app.getsinogramButton.Position = [20 76 100 46];
+            app.getsinogramButton.Text = 'get sinogram';
+
+            % Create defualtCheckBox
+            app.defualtCheckBox = uicheckbox(app.Panel_14);
+            app.defualtCheckBox.ValueChangedFcn = createCallbackFcn(app, @defualtCheckBoxValueChanged, true);
+            app.defualtCheckBox.Text = 'defualt';
+            app.defualtCheckBox.FontWeight = 'bold';
+            app.defualtCheckBox.FontColor = [1 1 1];
+            app.defualtCheckBox.Position = [36 295 61 22];
 
             % Show the figure after all components are created
             app.UIFigure.Visible = 'on';
