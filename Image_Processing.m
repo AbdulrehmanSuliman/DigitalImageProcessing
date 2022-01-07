@@ -134,6 +134,12 @@ classdef Image_Processing < matlab.apps.AppBase
         UIAxes3_13                      matlab.ui.control.UIAxes
         OriginalImagePanel_6            matlab.ui.container.Panel
         UIAxes3_12                      matlab.ui.control.UIAxes
+        ColorMapTab                     matlab.ui.container.Tab
+        Panel_16                        matlab.ui.container.Panel
+        UIAxes_2                        matlab.ui.control.UIAxes
+        Panel_15                        matlab.ui.container.Panel
+        BrowseButton_2                  matlab.ui.control.Button
+        ChooseROIButton_2               matlab.ui.control.Button
         UIAxes3_3                       matlab.ui.control.UIAxes
     end
 
@@ -164,6 +170,8 @@ classdef Image_Processing < matlab.apps.AppBase
         backProjFilter % back Projection Filter type
         sinogram % sinogramImage
         defualtTheta % defualt theta for sinogram
+        variance % the variance of the image
+        varImage % the image to get the variance region for
     end
     
     methods (Access = private)
@@ -213,6 +221,47 @@ classdef Image_Processing < matlab.apps.AppBase
                         end
                     end
                     results =Output;
+        end
+        
+        function results = LocalVariance(app,img)
+            Row= size(img,1);
+            Col= size(img,2);
+            %pad the image
+            paddedImage=zeros(Row+(25-1),Col+(25-1));
+            for i=1:Row
+                for j=1:Col
+                    paddedImage(i+(25-1)/2,j+(25-1)/2)=img(i,j);
+                end
+            end
+            app.variance=ones(Row,Col);
+            for k=1:Row
+                for m=1:Col
+                    kernel = paddedImage(k:k+(25-1),m:m+(25-1));
+                    %get the histogram of the kernel
+                    histImage=zeros(1,256);
+                    for i=1:25
+                        for j=1:25
+                            intensity=kernel(i,j);
+                            histImage(intensity+1)=histImage(intensity+1)+1;
+                        end
+                    end
+                    %get the mean and standerd deviation
+                    %Mean= (Sum of values)/count
+                    %variance= E(x^2)-(E(x))^2
+                    %segma = sqrt(variance)
+                    sumX=0;
+                    sumX2=0;
+                    count=0;
+                    for i=1:256
+                        count=count+histImage(i);
+                        sumX=sumX+i*histImage(i);
+                        sumX2=sumX2+i^2*histImage(i);
+                    end
+                    app.variance(k,m)=(sumX2/count)-(sumX/count)^2;
+                    
+                end
+            end
+            results=app.variance;
         end
     end
 
@@ -281,6 +330,10 @@ classdef Image_Processing < matlab.apps.AppBase
             app.backProjFilter=app.NoneButton;
             app.getsinogramButton.Visible='off';
             app.getlaminogramButton.Visible='off';
+            app.UIAxes3_12.Visible='off';
+            app.UIAxes3_13.Visible='off';
+            app.UIAxes3_14.Visible='off';
+            app.UIAxes_2.Visible='off';
         end
 
         % Callback function
@@ -934,6 +987,7 @@ classdef Image_Processing < matlab.apps.AppBase
 
         % Button pushed function: getsinogramButton
         function getsinogramButtonPushed(app, event)
+            try
             if app.defualtTheta==1
                 %the first requirement 
                 app.Theta=[0 20 40 60 160];
@@ -945,6 +999,10 @@ classdef Image_Processing < matlab.apps.AppBase
             [app.sinogram,xp]=radon(app.backProjPhantom,app.Theta);
             imshow(app.sinogram,[], 'Parent', app.UIAxes3_13,'XData', app.Theta,'YData',xp);
             app.getlaminogramButton.Visible='on';
+            catch
+                
+                uialert(app.UIFigure ,'Invalid input','Invalid input');
+            end
         end
 
         % Button pushed function: getlaminogramButton
@@ -970,6 +1028,74 @@ classdef Image_Processing < matlab.apps.AppBase
         function defualtCheckBoxValueChanged(app, event)
             value = app.defualtCheckBox.Value;
             app.defualtTheta=value;
+        end
+
+        % Button pushed function: BrowseButton_2
+        function BrowseButton_2Pushed(app, event)
+            try
+               %browse files
+               [filename,filepath] = uigetfile({'*.jpeg;*.jpg;*.png;*.bmp;*.dcm;*.tif'}, 'Select File to Open');
+               fullname = [filepath, filename];
+               [path ,name , format]=fileparts(fullname);
+            catch
+                %If no files is selected or cancel button pressed
+                format='None';
+            end
+            %check if the select file is a dicom file and accordingly use the appropriate functions
+            switch lower(format)
+                case { '.jpeg','.jpg','.bmp','.png','.tif'}
+%                      try
+                        app.varImage = imread(fullname);
+                        
+                        imag= 0.2989 * app.varImage(:,:,1) + 0.5870 * app.varImage(:,:,2) + 0.1140 * app.varImage(:,:,3);
+                        Row=size(imag,1);
+                        Col=size(imag,2);
+                        %calculate local variance
+                        app.LocalVariance(imag);
+                        disp(class(app.varImage))
+%                         app.varImage=gray2ind(app.varImage);
+%                         app.varImage=ind2rgb(app.varImage);
+                        app.UIAxes_2.Position=[0,-200,Col,Row];
+                        imshow(app.varImage,'parent',app.UIAxes_2);
+                        
+                        
+                          
+                        
+%                      catch
+%                         %handle corrupted files
+%                          uialert(app.UIFigure ,'choose a file','File is corrupted');
+%                      end
+                otherwise
+                    %In this case no file is selected 
+                    uialert(app.UIFigure ,'choose a file','Invalid input');
+                 
+            end
+            
+        end
+
+        % Button pushed function: ChooseROIButton_2
+        function ChooseROIButton_2Pushed(app, event)
+            roi = drawrectangle(app.UIAxes_2,'interactionsAllowed','none','Color',[1 0 0]);
+             p=roi.Position;
+             if(p==0)
+                 p=1;
+             end
+             roiImage=app.variance(p(2):p(2)+p(4),p(1):p(1)+p(3));
+             roiImage=uint8(255*mat2gray(roiImage));
+             colors=jet();
+             colors=uint8(255*mat2gray(colors));
+             red=colors(:,1);
+             green=colors(:,2);
+             blue=colors(:,3);
+             img=app.varImage;
+             app.UIAxes_2.Position=[0,-200,size(img,2),size(img,1)];
+             img(p(2):p(2)+p(4),p(1):p(1)+p(3),1)=red(roiImage+1);
+             img(p(2):p(2)+p(4),p(1):p(1)+p(3),2)=green(roiImage+1);
+             img(p(2):p(2)+p(4),p(1):p(1)+p(3),3)=blue(roiImage+1);
+             imshow(img,[],'parent',app.UIAxes_2);
+
+             
+             delete(roi);
         end
     end
 
@@ -2031,7 +2157,7 @@ classdef Image_Processing < matlab.apps.AppBase
 
             % Create MaxAngleEditField
             app.MaxAngleEditField = uieditfield(app.Panel_14, 'numeric');
-            app.MaxAngleEditField.Limits = [0 360];
+            app.MaxAngleEditField.Limits = [0.01 360];
             app.MaxAngleEditField.ValueChangedFcn = createCallbackFcn(app, @MaxAngleEditFieldValueChanged, true);
             app.MaxAngleEditField.HorizontalAlignment = 'left';
             app.MaxAngleEditField.FontColor = [1 1 1];
@@ -2073,6 +2199,47 @@ classdef Image_Processing < matlab.apps.AppBase
             app.defualtCheckBox.FontWeight = 'bold';
             app.defualtCheckBox.FontColor = [1 1 1];
             app.defualtCheckBox.Position = [36 295 61 22];
+
+            % Create ColorMapTab
+            app.ColorMapTab = uitab(app.TabGroup);
+            app.ColorMapTab.Title = 'Color Map';
+
+            % Create Panel_15
+            app.Panel_15 = uipanel(app.ColorMapTab);
+            app.Panel_15.BorderType = 'none';
+            app.Panel_15.BackgroundColor = [0 0.451 0.7412];
+            app.Panel_15.Position = [1 0 145 510];
+
+            % Create ChooseROIButton_2
+            app.ChooseROIButton_2 = uibutton(app.Panel_15, 'push');
+            app.ChooseROIButton_2.ButtonPushedFcn = createCallbackFcn(app, @ChooseROIButton_2Pushed, true);
+            app.ChooseROIButton_2.BackgroundColor = [1 1 1];
+            app.ChooseROIButton_2.FontWeight = 'bold';
+            app.ChooseROIButton_2.FontColor = [0 0.4471 0.7412];
+            app.ChooseROIButton_2.Position = [16 278 100 36];
+            app.ChooseROIButton_2.Text = 'Choose ROI';
+
+            % Create BrowseButton_2
+            app.BrowseButton_2 = uibutton(app.Panel_15, 'push');
+            app.BrowseButton_2.ButtonPushedFcn = createCallbackFcn(app, @BrowseButton_2Pushed, true);
+            app.BrowseButton_2.BackgroundColor = [1 1 1];
+            app.BrowseButton_2.FontWeight = 'bold';
+            app.BrowseButton_2.FontColor = [0 0.4471 0.7412];
+            app.BrowseButton_2.Position = [11 397 114 33];
+            app.BrowseButton_2.Text = 'Browse';
+
+            % Create Panel_16
+            app.Panel_16 = uipanel(app.ColorMapTab);
+            app.Panel_16.BorderType = 'none';
+            app.Panel_16.BackgroundColor = [0 0 0];
+            app.Panel_16.Scrollable = 'on';
+            app.Panel_16.Position = [135 0 1079 510];
+
+            % Create UIAxes_2
+            app.UIAxes_2 = uiaxes(app.Panel_16);
+            app.UIAxes_2.Colormap = [0.2431 0.149 0.6588;0.251 0.1647 0.7059;0.2588 0.1804 0.7529;0.2627 0.1961 0.7961;0.2706 0.2157 0.8353;0.2745 0.2353 0.8706;0.2784 0.2549 0.898;0.2784 0.2784 0.9216;0.2824 0.302 0.9412;0.2824 0.3216 0.9569;0.2784 0.3451 0.9725;0.2745 0.3686 0.9843;0.2706 0.3882 0.9922;0.2588 0.4118 0.9961;0.2431 0.4353 1;0.2196 0.4588 0.9961;0.1961 0.4863 0.9882;0.1843 0.5059 0.9804;0.1804 0.5294 0.9686;0.1765 0.549 0.9529;0.1686 0.5686 0.9373;0.1529 0.5922 0.9216;0.1451 0.6078 0.9098;0.1373 0.6275 0.898;0.1255 0.6471 0.8902;0.1098 0.6627 0.8745;0.0941 0.6784 0.8588;0.0706 0.6941 0.8392;0.0314 0.7098 0.8157;0.0039 0.7216 0.7922;0.0078 0.7294 0.7647;0.0431 0.7412 0.7412;0.098 0.749 0.7137;0.1412 0.7569 0.6824;0.1725 0.7686 0.6549;0.1922 0.7765 0.6235;0.2157 0.7843 0.5922;0.2471 0.7922 0.5569;0.2902 0.7961 0.5176;0.3412 0.8 0.4784;0.3922 0.8039 0.4353;0.4471 0.8039 0.3922;0.5059 0.8 0.349;0.5608 0.7961 0.3059;0.6157 0.7882 0.2627;0.6706 0.7804 0.2235;0.7255 0.7686 0.1922;0.7725 0.7608 0.1647;0.8196 0.749 0.1529;0.8627 0.7412 0.1608;0.902 0.7333 0.1765;0.9412 0.7294 0.2118;0.9725 0.7294 0.2392;0.9961 0.7451 0.2353;0.9961 0.7647 0.2196;0.9961 0.7882 0.2039;0.9882 0.8118 0.1882;0.9804 0.8392 0.1765;0.9686 0.8627 0.1647;0.9608 0.8902 0.1529;0.9608 0.9137 0.1412;0.9647 0.9373 0.1255;0.9686 0.9608 0.1059;0.9765 0.9843 0.0824];
+            app.UIAxes_2.Color = [0 0 0];
+            app.UIAxes_2.Position = [238 61 398 349];
 
             % Show the figure after all components are created
             app.UIFigure.Visible = 'on';
